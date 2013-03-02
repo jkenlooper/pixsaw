@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os
 
 name = "pixsaw"
-version = "0.0.1a"
+version = "0.0.1"
 
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
@@ -30,10 +30,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'setuptools',
-        'lxml',
-        'pgmagick', # relies on graphicsmagick
-        'svgwrite',
-        'beautifulsoup4', #works on python2.6 ?
         'pillow',
       ],
     entry_points="""
