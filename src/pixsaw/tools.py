@@ -26,7 +26,7 @@ def floodfill(pixels, bbox, origin=None, targetcolor=(255,255,255,255),
         if (x,y) in clip:
             continue
 
-        if x > right or x < left or y > bottom or y < top:
+        if x >= right or x < left or y >= bottom or y < top:
             continue
 
         p = pixels[(x,y)]
