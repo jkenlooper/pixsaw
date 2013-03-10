@@ -30,13 +30,19 @@ Example::
 
 
 The puzzle lines:
+
 .. image:: https://github.com/jkenlooper/pixsaw/raw/master/examples/small-puzzle-lines.png
 
+
 The image:
+
 .. image:: https://github.com/jkenlooper/pixsaw/raw/master/examples/320px-White_Spoon_Osteospermum.jpg
+
+
 Image from: http://en.wikipedia.org/wiki/File:White_Spoon_Osteospermum.JPG
 
 The output (combined into one file with glue to better show it):
+
 .. image:: https://github.com/jkenlooper/pixsaw/raw/master/examples/pieces-combined-with-glue.png
 
 
