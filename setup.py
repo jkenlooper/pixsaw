@@ -29,8 +29,7 @@ setup(
     packages=find_packages('src'),
     zip_safe=False,
     install_requires=[
-        'setuptools',
-        'pillow',
+        'Pillow',
       ],
     entry_points="""
     [console_scripts]
