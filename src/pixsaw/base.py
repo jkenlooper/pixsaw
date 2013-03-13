@@ -15,7 +15,7 @@ class HandlerError(Exception):
 
 class Handler(object):
 
-    def __init__(self, output_dir, lines_image):
+    def __init__(self, output_dir, lines_image, mask_dir='', raster_dir=''):
         """Handler constructor
         Fills an output directory with the generated masks based on
         lines drawn on an image.  Skips creating masks if output directory is
@@ -34,6 +34,8 @@ class Handler(object):
 
         self._lines_image = lines_image
         self._output_dir = output_dir
+        self._mask_dir = os.path.join(output_dir, mask_dir)
+        self._raster_dir = os.path.join(output_dir, raster_dir)
         if not os.path.isfile(original_lines_image):
             self._generate_masks()
 
@@ -75,7 +77,7 @@ class Handler(object):
                         m_bbox = maskimg.getbbox()
                         logging.debug("new mask: %s" % masks_count)
                         maskimg.save(
-                                os.path.join(self._output_dir,
+                                os.path.join(self._mask_dir,
                                 'm-%s.png' % masks_count) )
 
                         #TODO: create a svg version of the mask using potrace?
@@ -94,7 +96,7 @@ class Handler(object):
         width, height = im.size
         piece_json_file = open(os.path.join( self._output_dir, 'pieces.json'), 'r')
         pieces = json.load(piece_json_file)
-        for mask in glob(os.path.join(self._output_dir, 'm-*.png')):
+        for mask in glob(os.path.join(self._mask_dir, 'm-*.png')):
             piece = Image.new("RGBA", (width, height), (0,0,0,0))
             maskimg = Image.open(mask)
             maskname = os.path.basename(mask)
@@ -102,4 +104,4 @@ class Handler(object):
             piece.paste(im, (0,0), maskimg)
             logging.debug('crop %s' % pieces.get(mask_id))
             piece = piece.crop(pieces.get(mask_id))
-            piece.save( os.path.join(self._output_dir, 'p-%s' % maskname) )
+            piece.save( os.path.join(self._raster_dir, 'p-%s' % maskname) )
