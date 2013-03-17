@@ -15,6 +15,9 @@ class HandlerError(Exception):
 
 class Handler(object):
 
+    mask_prefix = 'm-'
+    piece_prefix = 'p-'
+
     def __init__(self, output_dir, lines_image, mask_dir='', raster_dir=''):
         """Handler constructor
         Fills an output directory with the generated masks based on
@@ -78,7 +81,7 @@ class Handler(object):
                         logging.debug("new mask: %s" % masks_count)
                         maskimg.save(
                                 os.path.join(self._mask_dir,
-                                'm-%s.png' % masks_count) )
+                                '%s%s.png' % (self.mask_prefix, masks_count)) )
 
                         #TODO: create a svg version of the mask using potrace?
                         pieces[masks_count] = m_bbox
@@ -96,12 +99,13 @@ class Handler(object):
         width, height = im.size
         piece_json_file = open(os.path.join( self._output_dir, 'pieces.json'), 'r')
         pieces = json.load(piece_json_file)
-        for mask in glob(os.path.join(self._mask_dir, 'm-*.png')):
+        for mask in glob(os.path.join(self._mask_dir, '%s*.png' % self.mask_prefix)):
             piece = Image.new("RGBA", (width, height), (0,0,0,0))
             maskimg = Image.open(mask)
             maskname = os.path.basename(mask)
-            mask_id = maskname[2:maskname.find('.')]
+            mask_id = maskname[len(self.mask_prefix):maskname.find('.')]
             piece.paste(im, (0,0), maskimg)
             logging.debug('crop %s' % pieces.get(mask_id))
             piece = piece.crop(pieces.get(mask_id))
-            piece.save( os.path.join(self._raster_dir, 'p-%s' % maskname) )
+            piece.save( os.path.join(self._raster_dir, '%s%s' %
+                (self.piece_prefix, maskname)) )
