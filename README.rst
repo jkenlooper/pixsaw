@@ -53,3 +53,9 @@ To install this locally with buildout::
 
     $ python bootstrap.py
     $ ./bin/buildout
+
+
+.. image:: https://d2weczhvl823v0.cloudfront.net/jkenlooper/pixsaw/trend.png
+   :alt: Bitdeli badge
+   :target: https://bitdeli.com/free
+
