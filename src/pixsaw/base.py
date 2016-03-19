@@ -49,7 +49,7 @@ class Handler(object):
         # When found a white pixel floodfill it and create a mask file in
         # output dir.  Replace flooded pixels with transparent pixels and
         # continue.
-        im = Image.open(self._lines_image)
+        im = Image.open(self._lines_image).convert("RGBA")
 
         lines_image_name = os.path.basename(self._lines_image)
         im.save(os.path.join(self._output_dir, lines_image_name))
