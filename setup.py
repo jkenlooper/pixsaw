@@ -1,20 +1,22 @@
+# https://packaging.python.org/en/latest/distributing.html
 from setuptools import setup, find_packages
 import os
 
 name = "pixsaw"
-version = "0.0.1"
 
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 setup(
     name=name,
-    version=version,
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     author='Jake Hickenlooper',
     author_email='jake@weboftomorrow.com',
     description="Cut a picture into pieces by cutting along pixel lines",
     long_description=read('README.rst'),
     url='https://github.com/jkenlooper/pixsaw',
+    license='GPL',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
