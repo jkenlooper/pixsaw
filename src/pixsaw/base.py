@@ -18,7 +18,7 @@ class Handler(object):
     mask_prefix = 'm-'
     piece_prefix = 'p-'
 
-    def __init__(self, output_dir, lines_image, mask_dir='', raster_dir=''):
+    def __init__(self, output_dir, lines_image, mask_dir='', raster_dir='', jpg_dir=''):
         """Handler constructor
         Fills an output directory with the generated masks based on
         lines drawn on an image.  Skips creating masks if output directory is
@@ -39,6 +39,7 @@ class Handler(object):
         self._output_dir = output_dir
         self._mask_dir = os.path.join(output_dir, mask_dir)
         self._raster_dir = os.path.join(output_dir, raster_dir)
+        self._jpg_dir = os.path.join(output_dir, jpg_dir)
         if not os.path.isfile(original_lines_image):
             self._generate_masks()
 
@@ -109,3 +110,5 @@ class Handler(object):
             piece = piece.crop(pieces.get(mask_id))
             piece.save( os.path.join(self._raster_dir, '%s%s' %
                 (self.piece_prefix, maskname)) )
+            piece.save( os.path.join(self._jpg_dir, '%s%s.jpg' %
+                (self.piece_prefix, os.path.splitext(maskname)[0])) )
