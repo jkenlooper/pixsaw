@@ -68,8 +68,21 @@ class Handler(object):
             for col in xrange(left, right):
                 if pixels[(col,row)][3] > 0:
                     mask_pixels = floodfill(pixels, bbox, (col, row))
-                    #only save masks that are bigger then a single pixel
-                    if len(mask_pixels) > 1:
+                    # If the mask_pixels are not big enought merge to the next one that may be.
+                    if False: # TODO: merge small pieces
+                        if len(mask_pixels) < 100 and len(mask_pixels) > 1:
+                            sub_flood = False # for breaking out of the for loops
+                            for subrow in xrange(row, bottom):
+                                if sub_flood:
+                                    break
+                                for subcol in xrange(left, right):
+                                    if (subcol, subrow) not in mask_pixels and pixels[(subcol,subrow)][3] > 0:
+                                        adjacent_flood = floodfill(pixels, bbox, (subcol, subrow))
+                                        if len(adjacent_flood) > 100:
+                                            mask_pixels.update(adjacent_flood)
+                                            sub_flood = True
+                                            break
+                    if len(mask_pixels) >= 100:
                         maskimg = Image.new("RGBA", (width, height), (0,0,0,0))
                         pixel_seq = [(0,0,0,0) for x in range(0, (width*height))]
                         for (x, y) in mask_pixels:
@@ -83,6 +96,7 @@ class Handler(object):
                         maskimg.save(
                                 os.path.join(self._mask_dir,
                                 '%s%s.png' % (self.mask_prefix, masks_count)) )
+                        maskimg.close()
 
                         #TODO: create a svg version of the mask using potrace?
                         pieces[masks_count] = m_bbox
@@ -106,9 +120,12 @@ class Handler(object):
             maskname = os.path.basename(mask)
             mask_id = maskname[len(self.mask_prefix):maskname.find('.')]
             piece.paste(im, (0,0), maskimg)
+            maskimg.close()
             logging.debug('crop %s' % pieces.get(mask_id))
             piece = piece.crop(pieces.get(mask_id))
             piece.save( os.path.join(self._raster_dir, '%s%s' %
                 (self.piece_prefix, maskname)) )
             piece.save( os.path.join(self._jpg_dir, '%s%s.jpg' %
                 (self.piece_prefix, os.path.splitext(maskname)[0])) )
+            piece.close()
+        im.close()

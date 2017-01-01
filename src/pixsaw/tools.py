@@ -1,6 +1,3 @@
-from PIL import Image
-
-
 def floodfill(pixels, bbox, origin=None, targetcolor=(255,255,255,255),
         tolerance=0):
     """Flood Fill at origin using a stack.
