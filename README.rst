@@ -12,9 +12,13 @@ Requires:
 
 * `Pillow <http://github.com/python-imaging/Pillow>`_
 
-Install with setup.py::
+Install with pip in editable mode for developing and use virtualenv to isolate
+python dependencies::
 
-    $ python setup.py install
+    $ virtualenv .
+    $ source ./bin/activate
+    $ pip install -e .
+
 
 Usage
 -----
@@ -45,17 +49,4 @@ The output (combined into one file with glue to better show it):
 
 .. image:: https://github.com/jkenlooper/pixsaw/raw/master/examples/pieces-combined-with-glue.png
 
-
-Developing
-----------
-
-To install this locally with buildout::
-
-    $ python bootstrap.py
-    $ ./bin/buildout
-
-
-.. image:: https://d2weczhvl823v0.cloudfront.net/jkenlooper/pixsaw/trend.png
-   :alt: Bitdeli badge
-   :target: https://bitdeli.com/free
 

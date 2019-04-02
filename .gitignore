@@ -1,0 +1,8 @@
+*.pyc
+/.eggs/
+/bin/
+/include/
+/lib/
+/local/
+/share/
+/src/pixsaw.egg-info/

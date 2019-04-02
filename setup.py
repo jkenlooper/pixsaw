@@ -2,6 +2,8 @@
 from setuptools import setup, find_packages
 import os
 
+execfile(os.path.join(os.path.dirname(__file__), 'src', 'pixsaw', '__version__.py'))
+
 name = "pixsaw"
 
 def read(*rnames):
@@ -9,8 +11,7 @@ def read(*rnames):
 
 setup(
     name=name,
-    use_scm_version=True,
-    setup_requires=['setuptools_scm'],
+    version=__version__,
     author='Jake Hickenlooper',
     author_email='jake@weboftomorrow.com',
     description="Cut a picture into pieces by cutting along pixel lines",
@@ -23,7 +24,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Natural Language :: English',
         'Operating System :: POSIX',
-        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
         'Topic :: Software Development :: Build Tools',
         'Environment :: Web Environment',
         ],
@@ -31,7 +32,7 @@ setup(
     packages=find_packages('src'),
     zip_safe=False,
     install_requires=[
-        'Pillow',
+        'Pillow == 3.3.0',
       ],
     entry_points="""
     [console_scripts]

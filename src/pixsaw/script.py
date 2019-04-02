@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 
 import logging
+import os
 from optparse import OptionParser
 
-from setuptools_scm import get_version
-
 from pixsaw.base import Handler
+
+execfile(os.path.join(os.path.dirname(__file__), '__version__.py'))
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
     parser = OptionParser(
             usage="%prog --dir path/to/dir --lines lines.png [options] path/to/image",
-            version=get_version(),
+            version=__version__,
             description="Cut a picture into pieces by cutting along pixel lines")
 
     parser.add_option("--dir", "-d",
