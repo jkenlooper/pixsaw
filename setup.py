@@ -25,6 +25,7 @@ setup(
         'Natural Language :: English',
         'Operating System :: POSIX',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6',
         'Topic :: Software Development :: Build Tools',
         'Environment :: Web Environment',
         ],
@@ -32,8 +33,8 @@ setup(
     packages=find_packages('src'),
     zip_safe=False,
     install_requires=[
-        'Pillow == 3.3.0',
         'future',
+        'Pillow < 7',
       ],
     entry_points="""
     [console_scripts]

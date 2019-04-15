@@ -62,6 +62,7 @@ class Handler(object):
         bbox = im.getbbox()
         left, top, right, bottom = bbox
         width, height = im.size
+        im.close()
         logging.debug("bbox %s, %s, %s, %s" % bbox)
 
         #scan line by line for pixels that are not transparent
@@ -137,9 +138,11 @@ class Handler(object):
             piece = piece.crop(masks.get(mask_id))
             piece.save( os.path.join(self._raster_dir, '%s%s' %
                 (self.piece_prefix, piecename)) )
-            piece.save( os.path.join(self._jpg_dir, '%s%s.jpg' %
-                (self.piece_prefix, os.path.splitext(piecename)[0])) )
+            jpgpiece = piece.convert('RGB')
             piece.close()
+            jpgpiece.save( os.path.join(self._jpg_dir, '%s%s.jpg' %
+                (self.piece_prefix, os.path.splitext(piecename)[0])) )
+            jpgpiece.close()
 
             # Copy the bbox from mask to pieces dict which will now have 'shuffled' int id's
             pieces[mask_count] = masks.get(mask_id)
