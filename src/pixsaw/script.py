@@ -6,7 +6,7 @@ from optparse import OptionParser
 
 from pixsaw.base import Handler
 
-execfile(os.path.join(os.path.dirname(__file__), '__version__.py'))
+from pixsaw._version import __version__
 
 def main():
     logging.basicConfig(level=logging.DEBUG)

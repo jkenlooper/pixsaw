@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 import os
 
-execfile(os.path.join(os.path.dirname(__file__), 'src', 'pixsaw', '__version__.py'))
+__version__ = "0.1.1" # Also set in src/pixsaw/_version.py
 
 name = "pixsaw"
 
@@ -33,6 +33,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'Pillow == 3.3.0',
+        'future',
       ],
     entry_points="""
     [console_scripts]

@@ -1,3 +1,5 @@
+from builtins import range
+from builtins import object
 import os.path
 from glob import glob
 import json
@@ -64,18 +66,18 @@ class Handler(object):
 
         #scan line by line for pixels that are not transparent
         masks = {}
-        for row in xrange(top, bottom):
-            for col in xrange(left, right):
+        for row in range(top, bottom):
+            for col in range(left, right):
                 if pixels[(col,row)][3] > 0:
                     mask_pixels = floodfill(pixels, bbox, (col, row))
                     # If the mask_pixels are not big enought merge to the next one that may be.
                     if False: # TODO: merge small masks
                         if len(mask_pixels) < 100 and len(mask_pixels) > 1:
                             sub_flood = False # for breaking out of the for loops
-                            for subrow in xrange(row, bottom):
+                            for subrow in range(row, bottom):
                                 if sub_flood:
                                     break
-                                for subcol in xrange(left, right):
+                                for subcol in range(left, right):
                                     if (subcol, subrow) not in mask_pixels and pixels[(subcol,subrow)][3] > 0:
                                         adjacent_flood = floodfill(pixels, bbox, (subcol, subrow))
                                         if len(adjacent_flood) > 100:
