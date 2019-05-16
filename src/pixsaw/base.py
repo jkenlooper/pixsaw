@@ -10,6 +10,10 @@ from PIL import Image
 
 from pixsaw.tools import floodfill
 
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 class HandlerError(Exception):
     def __init__(self, value):
         self.value = value
@@ -63,7 +67,6 @@ class Handler(object):
         left, top, right, bottom = bbox
         width, height = im.size
         im.close()
-        logging.debug("bbox %s, %s, %s, %s" % bbox)
 
         #scan line by line for pixels that are not transparent
         masks = {}
@@ -75,10 +78,10 @@ class Handler(object):
                     if False: # TODO: merge small masks
                         if len(mask_pixels) < 100 and len(mask_pixels) > 1:
                             sub_flood = False # for breaking out of the for loops
-                            for subrow in range(row, bottom):
+                            for subrow in range(row, bottom+1):
                                 if sub_flood:
                                     break
-                                for subcol in range(left, right):
+                                for subcol in range(left, right+1):
                                     if (subcol, subrow) not in mask_pixels and pixels[(subcol,subrow)][3] > 0:
                                         adjacent_flood = floodfill(pixels, bbox, (subcol, subrow))
                                         if len(adjacent_flood) > 100:
@@ -91,15 +94,35 @@ class Handler(object):
 
                         # Create mask image and save under mask_id
                         maskimg = Image.new("RGBA", (width, height), (0,0,0,0))
-                        pixel_seq = [(0,0,0,0) for x in range(0, (width*height))]
+
+                        mask_pixels_top = bottom
+                        mask_pixels_right = left
+                        mask_pixels_bottom = top
+                        mask_pixels_left = right
                         for (x, y) in mask_pixels:
-                            p_index = (y*width) + x
+                            mask_pixels_top = min(mask_pixels_top, y)
+                            mask_pixels_right = max(mask_pixels_right, x)
+                            mask_pixels_bottom = max(mask_pixels_bottom, y)
+                            mask_pixels_left = min(mask_pixels_left, x)
+
+                        mask_pixels_width = (mask_pixels_right - mask_pixels_left) + 1
+                        mask_pixels_height = (mask_pixels_bottom - mask_pixels_top) + 1
+                        pixel_seq = [(0,0,0,0) for x in range(0, (mask_pixels_width * mask_pixels_height))]
+
+                        for (x, y) in mask_pixels:
+                            m_x = x - mask_pixels_left
+                            m_y = y - mask_pixels_top
+                            p_index = ((m_y * mask_pixels_width) + m_x)
                             black_pixel_with_alpha = (0,0,0, pixels[(x,y)][3])
                             pixel_seq[p_index] = black_pixel_with_alpha
                             pixels[(x,y)] = (0,0,0,0) # clear the pixel
-                        maskimg.putdata( pixel_seq )
+
+                        floodmaskimg = Image.new("RGBA", (mask_pixels_width, mask_pixels_height), (0,0,0,0))
+                        floodmaskimg.putdata(pixel_seq)
+                        maskimg.paste(floodmaskimg, (mask_pixels_left, mask_pixels_top))
+
                         m_bbox = maskimg.getbbox()
-                        logging.debug("new mask: %s" % mask_id)
+
                         maskimg.save(
                                 os.path.join(self._mask_dir,
                                 '%s%s.png' % (self.mask_prefix, mask_id)) )
@@ -134,7 +157,7 @@ class Handler(object):
             mask_id = maskname[len(self.mask_prefix):maskname.find('.')]
             piece.paste(im, (0,0), maskimg)
             maskimg.close()
-            logging.debug('crop %s' % masks.get(mask_id))
+            #logger.debug('crop %s' % masks.get(mask_id))
             piece = piece.crop(masks.get(mask_id))
             piece.save( os.path.join(self._raster_dir, '%s%s' %
                 (self.piece_prefix, piecename)) )
