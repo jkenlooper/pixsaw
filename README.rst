@@ -15,7 +15,7 @@ Requires:
 Install with pip in editable mode for developing and use virtualenv to isolate
 python dependencies::
 
-    $ virtualenv .
+    $ python3 -m venv .
     $ source ./bin/activate
     $ pip install -e .
 
