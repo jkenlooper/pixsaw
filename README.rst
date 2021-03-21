@@ -29,7 +29,8 @@ cut, and the image that should be cut into pieces.
 
 Example::
 
-    $ pixsaw --dir examples/small-puzzle --lines examples/small-puzzle-lines.png examples/320px-White_Spoon_Osteospermum.jpg
+    $ mkdir tmp-small-puzzle-example
+    $ pixsaw --dir tmp-small-puzzle-example --lines examples/small-puzzle-lines.png examples/320px-White_Spoon_Osteospermum.jpg
 
 
 

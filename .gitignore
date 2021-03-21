@@ -3,6 +3,9 @@
 /bin/
 /include/
 /lib/
+/lib64
 /local/
 /share/
 /src/pixsaw.egg-info/
+/pyvenv.cfg
+/tmp-small-puzzle-example
