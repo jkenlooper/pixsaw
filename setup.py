@@ -33,7 +33,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'future',
-        'Pillow < 7',
+        'Pillow < 9',
       ],
     entry_points="""
     [console_scripts]
