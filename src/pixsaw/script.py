@@ -8,21 +8,29 @@ from pixsaw.base import Handler
 
 from pixsaw._version import __version__
 
+
 def main():
     logging.basicConfig(level=logging.DEBUG)
     parser = OptionParser(
-            usage="%prog --dir path/to/dir --lines lines.png [options] path/to/image",
-            version=__version__,
-            description="Cut a picture into pieces by cutting along pixel lines")
+        usage="%prog --dir path/to/dir --lines lines.png [options] path/to/image",
+        version=__version__,
+        description="Cut a picture into pieces by cutting along pixel lines",
+    )
 
-    parser.add_option("--dir", "-d",
-            action="store",
-            type="string",
-            help="Set the directory to store the clip files in.",)
-    parser.add_option("--lines", "-l",
-            action="store",
-            type="string",
-            help="Set the lines file.",)
+    parser.add_option(
+        "--dir",
+        "-d",
+        action="store",
+        type="string",
+        help="Set the directory to store the clip files in.",
+    )
+    parser.add_option(
+        "--lines",
+        "-l",
+        action="store",
+        type="string",
+        help="Set the lines file.",
+    )
 
     (options, args) = parser.parse_args()
 
@@ -33,5 +41,6 @@ def main():
     for image in args:
         handler.process(image)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
