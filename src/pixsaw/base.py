@@ -4,7 +4,9 @@ import os.path
 from glob import glob
 import json
 import logging
-import uuid
+from random import shuffle
+import base64
+# import time
 
 from PIL import Image
 
@@ -68,13 +70,16 @@ class Handler(object):
         left, top, right, bottom = bbox
         width, height = im.size
         im.close()
+        mask_index = 0
 
         # scan line by line for pixels that are not transparent
         masks = {}
         for row in range(top, bottom):
             for col in range(left, right):
                 if pixels[(col, row)][3] > 0:
+                    # start = time.perf_counter()
                     mask_pixels = floodfill(pixels, bbox, (col, row))
+                    # stop = time.perf_counter()
                     # If the mask_pixels are not big enought merge to the next one that may be.
                     if False:  # TODO: merge small masks
                         if len(mask_pixels) < 100 and len(mask_pixels) > 1:
@@ -94,12 +99,23 @@ class Handler(object):
                                             sub_flood = True
                                             break
                     if len(mask_pixels) >= 100:
-                        # Use a uuid here to avoid sequentially numbering the masks.
-                        mask_id = uuid.uuid4().hex
+                        # logger.info(f"floodfill {stop - start}")
+                        # Use base64 of the mask_index to hint that the cut
+                        # piece filename which uses base10 does not correlate
+                        # with the base64 mask file name.
+                        mask_id = (
+                            base64.urlsafe_b64encode(bytes([mask_index]))
+                            .decode()
+                            .replace("=", "")
+                        )
 
                         # Create mask image and save under mask_id
-                        maskimg = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+                        # start = time.perf_counter()
+                        maskimg = Image.new("1", (width, height), 0)
+                        # stop = time.perf_counter()
+                        # logger.info(f"init blank mask {stop - start}")
 
+                        # start = time.perf_counter()
                         mask_pixels_top = bottom
                         mask_pixels_right = left
                         mask_pixels_bottom = top
@@ -121,33 +137,40 @@ class Handler(object):
                             m_x = x - mask_pixels_left
                             m_y = y - mask_pixels_top
                             p_index = (m_y * mask_pixels_width) + m_x
-                            black_pixel_with_alpha = (0, 0, 0, pixels[(x, y)][3])
-                            pixel_seq[p_index] = black_pixel_with_alpha
+                            pixel_seq[p_index] = 1 if pixels[(x, y)][3] != 0 else 0
                             pixels[(x, y)] = (0, 0, 0, 0)  # clear the pixel
 
                         floodmaskimg = Image.new(
-                            "RGBA",
+                            "1",
                             (mask_pixels_width, mask_pixels_height),
-                            (0, 0, 0, 0),
+                            0,
                         )
                         floodmaskimg.putdata(pixel_seq)
                         maskimg.paste(floodmaskimg, (mask_pixels_left, mask_pixels_top))
+                        floodmaskimg.close()
 
                         m_bbox = maskimg.getbbox()
+                        # stop = time.perf_counter()
+                        # logger.info(f"flood mask {stop - start}")
 
+                        # start = time.perf_counter()
+                        maskimg = maskimg.crop(m_bbox)
                         maskimg.save(
                             os.path.join(
-                                self._mask_dir, "%s%s.png" % (self.mask_prefix, mask_id)
+                                self._mask_dir, f"{self.mask_prefix}{mask_id}.bmp"
                             )
                         )
+                        # stop = time.perf_counter()
+                        # logger.info(f"save mask {stop - start}")
                         maskimg.close()
 
-                        # TODO: create a svg version of the mask using potrace?
                         # Save the mask bbox
                         masks[mask_id] = m_bbox
+                        mask_index = mask_index + 1
 
         masks_json_file = open(os.path.join(self._output_dir, "masks.json"), "w")
         json.dump(masks, masks_json_file)
+        masks_json_file.close()
 
     def process(self, image):
         """Cut up the image based on the saved masks generated from the
@@ -159,25 +182,29 @@ class Handler(object):
         width, height = im.size
         masks_json_file = open(os.path.join(self._output_dir, "masks.json"), "r")
         masks = json.load(masks_json_file)
+        piece_id_to_mask = {}
         pieces = {}
-        mask_count = 0
-
-        # Rely on the glob sort ordering here to shuffle the piece int id's
-        for mask in glob(os.path.join(self._mask_dir, "%s*.png" % self.mask_prefix)):
-            piece = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-            maskimg = Image.open(mask)
-            maskname = os.path.basename(mask)
-            piecename = "{0}{1}.png".format(self.mask_prefix, mask_count)
-            mask_id = maskname[len(self.mask_prefix) : maskname.find(".")]
-            piece.paste(im, (0, 0), maskimg)
-            maskimg.close()
-            # logger.debug('crop %s' % masks.get(mask_id))
+        mask_files = glob(os.path.join(self._mask_dir, f"{self.mask_prefix}*.bmp"))
+        # Shuffle the mask files so it isn't easy to guess the ordering
+        shuffle(mask_files)
+        for (mask_count, mask_file) in enumerate(mask_files):
+            maskname = os.path.basename(mask_file)
+            mask_id = os.path.splitext(maskname)[0][len(self.mask_prefix) :]
+            piece_id_to_mask[mask_count] = mask_id
+            piecename = f"{self.mask_prefix}{mask_count}.png"
+            piece = im.copy()
             piece = piece.crop(masks.get(mask_id))
-            piece.save(
-                os.path.join(self._raster_dir, "%s%s" % (self.piece_prefix, piecename))
-            )
-            jpgpiece = piece.convert("RGB")
+            piece_width, piece_height = piece.size
+            blank = Image.new("RGBA", (piece_width, piece_height), (0, 0, 0, 0))
+            maskimg = Image.open(mask_file)
+            blank.paste(piece, box=(0, 0), mask=maskimg)
             piece.close()
+            maskimg.close()
+            blank.save(
+                os.path.join(self._raster_dir, f"{self.piece_prefix}{piecename}")
+            )
+            jpgpiece = blank.convert("RGB")
+            blank.close()
             jpgpiece.save(
                 os.path.join(
                     self._jpg_dir,
@@ -188,10 +215,13 @@ class Handler(object):
 
             # Copy the bbox from mask to pieces dict which will now have 'shuffled' int id's
             pieces[mask_count] = masks.get(mask_id)
-            mask_count = mask_count + 1
 
         im.close()
 
         # Write new pieces.json
         pieces_json_file = open(os.path.join(self._output_dir, "pieces.json"), "w")
         json.dump(pieces, pieces_json_file)
+        piece_id_to_mask_json_file = open(
+            os.path.join(self._output_dir, "piece_id_to_mask.json"), "w"
+        )
+        json.dump(piece_id_to_mask, piece_id_to_mask_json_file)
