@@ -104,7 +104,7 @@ class Handler(object):
                         # piece filename which uses base10 does not correlate
                         # with the base64 mask file name.
                         mask_id = (
-                            base64.urlsafe_b64encode(bytes([mask_index]))
+                            base64.urlsafe_b64encode(bytes(str(mask_index), 'utf8'))
                             .decode()
                             .replace("=", "")
                         )
