@@ -55,7 +55,6 @@ class Handler(object):
 
     def _generate_masks(self):
         """Create each mask and save in output dir"""
-
         # starting at 0,0 and scanning each pixel on the row for a white pixel.
         # When found a white pixel floodfill it and create a mask file in
         # output dir.  Replace flooded pixels with transparent pixels and
@@ -81,21 +80,20 @@ class Handler(object):
                     mask_pixels = floodfill(pixels, bbox, (col, row))
                     # stop = time.perf_counter()
                     # If the mask_pixels are not big enought merge to the next one that may be.
-                    if False:  # TODO: merge small masks
-                        if len(mask_pixels) < 100 and len(mask_pixels) > 1:
+                    if True:  # TODO: merge small masks
+                        if len(mask_pixels) < 100: # and len(mask_pixels) > 10:
                             sub_flood = False  # for breaking out of the for loops
-                            for subrow in range(row, bottom + 1):
+                            for subrow in range(row, min(row + 20, bottom)):
                                 if sub_flood:
                                     break
-                                for subcol in range(left, right + 1):
+                                for subcol in range(col, min(col + 20, right)):
                                     if (subcol, subrow) not in mask_pixels and pixels[
                                         (subcol, subrow)
                                     ][3] > 0:
-                                        adjacent_flood = floodfill(
+                                        mask_pixels.update(floodfill(
                                             pixels, bbox, (subcol, subrow)
-                                        )
-                                        if len(adjacent_flood) > 100:
-                                            mask_pixels.update(adjacent_flood)
+                                        ))
+                                        if len(mask_pixels) >= 100:
                                             sub_flood = True
                                             break
                     if len(mask_pixels) >= 100:
