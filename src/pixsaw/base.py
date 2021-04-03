@@ -9,8 +9,13 @@ import base64
 # import time
 
 from PIL import Image
+from PIL import ImageFilter
 
 from pixsaw.tools import floodfill
+
+
+BLEED = 2
+HALF_BLEED = BLEED * 0.5
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -187,32 +192,47 @@ class Handler(object):
         shuffle(mask_files)
         for (mask_count, mask_file) in enumerate(mask_files):
             maskname = os.path.basename(mask_file)
-            mask_id = os.path.splitext(maskname)[0][len(self.mask_prefix) :]
+            mask_id = os.path.splitext(maskname)[0][len(self.mask_prefix):]
             piece_id_to_mask[mask_count] = mask_id
-            piecename = f"{self.mask_prefix}{mask_count}.png"
-            piece = im.copy()
-            piece = piece.crop(masks.get(mask_id))
-            piece_width, piece_height = piece.size
-            blank = Image.new("RGBA", (piece_width, piece_height), (0, 0, 0, 0))
+            piecename = f"{self.mask_prefix}{mask_count}"
+            bbox = masks.get(mask_id)
+            bbox_with_padding = list(range(0, 4))
+            bbox_with_padding[0] = bbox[0] - int(HALF_BLEED)
+            bbox_with_padding[1] = bbox[1] - int(HALF_BLEED)
+            bbox_with_padding[2] = bbox[2] + int(HALF_BLEED)
+            bbox_with_padding[3] = bbox[3] + int(HALF_BLEED)
+            piece_with_padding = im.crop(bbox_with_padding)
+            piece = im.crop(bbox)
+            transparent_blank = Image.new("RGBA", piece.size, (0, 0, 0, 0))
+            black_blank_with_padding = Image.new("RGB", piece_with_padding.size, (0, 0, 0))
+            maskimg_with_padding = black_blank_with_padding.copy()
             maskimg = Image.open(mask_file)
-            blank.paste(piece, box=(0, 0), mask=maskimg)
-            piece.close()
+            maskimg_with_padding.paste(maskimg, box=(int(HALF_BLEED), int(HALF_BLEED)))
+            if BLEED != 0:
+                maskimg_with_padding = maskimg_with_padding.convert("L")
+                maskimg_with_padding = maskimg_with_padding.filter(ImageFilter.BoxBlur(radius=int(HALF_BLEED)))
+                maskimg_with_padding = maskimg_with_padding.point(lambda x: 255 if x > 1 else 0)
+            maskimg_with_padding = maskimg_with_padding.convert("1")
+            maskimg_with_padding.save(os.path.join(self._mask_dir, f"{self.mask_prefix}{mask_id}-padding.bmp"))
+            black_blank_with_padding.paste(piece_with_padding, box=(0, 0), mask=maskimg_with_padding)
+            transparent_blank.paste(piece, box=(0, 0), mask=maskimg)
+            piece_with_padding.close()
+            maskimg_with_padding.close()
             maskimg.close()
-            blank.save(
-                os.path.join(self._raster_dir, f"{self.piece_prefix}{piecename}")
+            transparent_blank.save(
+                os.path.join(self._raster_dir, f"{self.piece_prefix}{piecename}.png")
             )
-            jpgpiece = blank.convert("RGB")
-            blank.close()
-            jpgpiece.save(
+            transparent_blank.close()
+            black_blank_with_padding.save(
                 os.path.join(
                     self._jpg_dir,
-                    "%s%s.jpg" % (self.piece_prefix, os.path.splitext(piecename)[0]),
+                    f"{self.piece_prefix}{piecename}.jpg",
                 )
             )
-            jpgpiece.close()
+            black_blank_with_padding.close()
 
             # Copy the bbox from mask to pieces dict which will now have 'shuffled' int id's
-            pieces[mask_count] = masks.get(mask_id)
+            pieces[mask_count] = bbox
 
         im.close()
 
