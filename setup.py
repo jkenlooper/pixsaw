@@ -19,7 +19,7 @@ setup(
     url='https://github.com/jkenlooper/pixsaw',
     license='GPL',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Natural Language :: English',
@@ -33,7 +33,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'future',
-        'Pillow < 9',
+        'Pillow >= 8.1.1, < 9',
       ],
     entry_points="""
     [console_scripts]
