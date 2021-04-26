@@ -88,10 +88,10 @@ class Handler(object):
                     if True:  # TODO: merge small masks
                         if len(mask_pixels) < 100: # and len(mask_pixels) > 10:
                             sub_flood = False  # for breaking out of the for loops
-                            for subrow in range(row, min(row + 20, bottom)):
+                            for subrow in range(row, min(row + 2, bottom)):
                                 if sub_flood:
                                     break
-                                for subcol in range(col, min(col + 20, right)):
+                                for subcol in range(col, min(col + 2, right)):
                                     if (subcol, subrow) not in mask_pixels and pixels[
                                         (subcol, subrow)
                                     ][3] > 0:
