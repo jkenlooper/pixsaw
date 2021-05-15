@@ -19,7 +19,7 @@ HALF_BLEED = BLEED * 0.5
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class HandlerError(Exception):
@@ -85,22 +85,21 @@ class Handler(object):
                     mask_pixels = floodfill(pixels, bbox, (col, row))
                     # stop = time.perf_counter()
                     # If the mask_pixels are not big enought merge to the next one that may be.
-                    if True:  # TODO: merge small masks
-                        if len(mask_pixels) < 100: # and len(mask_pixels) > 10:
-                            sub_flood = False  # for breaking out of the for loops
-                            for subrow in range(row, min(row + 2, bottom)):
-                                if sub_flood:
-                                    break
-                                for subcol in range(col, min(col + 2, right)):
-                                    if (subcol, subrow) not in mask_pixels and pixels[
-                                        (subcol, subrow)
-                                    ][3] > 0:
-                                        mask_pixels.update(floodfill(
-                                            pixels, bbox, (subcol, subrow)
-                                        ))
-                                        if len(mask_pixels) >= 100:
-                                            sub_flood = True
-                                            break
+                    if len(mask_pixels) < 100: # and len(mask_pixels) > 10:
+                        sub_flood = False  # for breaking out of the for loops
+                        for subrow in range(row, min(row + 2, bottom)):
+                            if sub_flood:
+                                break
+                            for subcol in range(col, min(col + 2, right)):
+                                if (subcol, subrow) not in mask_pixels and pixels[
+                                    (subcol, subrow)
+                                ][3] > 0:
+                                    mask_pixels.update(floodfill(
+                                        pixels, bbox, (subcol, subrow)
+                                    ))
+                                    if len(mask_pixels) >= 100:
+                                        sub_flood = True
+                                        break
                     if len(mask_pixels) >= 100:
                         # logger.info(f"floodfill {stop - start}")
                         # Use base64 of the mask_index to hint that the cut
