@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 import os
 
-__version__ = "0.3.0" # Also set in src/pixsaw/_version.py
+__version__ = "0.3.1-alpha.1" # Also set in src/pixsaw/_version.py
 
 name = "pixsaw"
 
