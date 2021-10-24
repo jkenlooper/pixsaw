@@ -50,6 +50,18 @@ def floodfill(pixels, bbox, origin=None, targetcolor=(255, 255, 255, 255), toler
                 if has_value(x, y - 1):
                     clip.add((x, y - 1))  # up
 
+                if has_value(x + 1, y - 1):
+                    clip.add((x + 1, y - 1))  # right up
+
+                if has_value(x + 1, y + 1):
+                    clip.add((x + 1, y + 1))  # right down
+
+                if has_value(x - 1, y - 1):
+                    clip.add((x - 1, y - 1))  # left up
+
+                if has_value(x - 1, y + 1):
+                    clip.add((x - 1, y + 1))  # left down
+
             continue
 
         clip.add((x, y))
@@ -58,5 +70,9 @@ def floodfill(pixels, bbox, origin=None, targetcolor=(255, 255, 255, 255), toler
         thestack.add((x - 1, y))  # left
         thestack.add((x, y + 1))  # down
         thestack.add((x, y - 1))  # up
+        thestack.add((x + 1, y - 1))  # right up
+        thestack.add((x + 1, y + 1))  # right down
+        thestack.add((x - 1, y - 1))  # left up
+        thestack.add((x - 1, y + 1))  # left down
 
     return clip
