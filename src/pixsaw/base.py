@@ -35,7 +35,7 @@ class Handler(object):
     mask_prefix = "m-"
     piece_prefix = "p-"
 
-    def __init__(self, output_dir, lines_image, mask_dir="", raster_dir="", jpg_dir=""):
+    def __init__(self, output_dir, lines_image, mask_dir="", raster_dir="", jpg_dir="", include_border_pixels=True):
         """Handler constructor
         Fills an output directory with the generated masks based on
         lines drawn on an image.  Skips creating masks if output directory is
@@ -56,9 +56,9 @@ class Handler(object):
         self._raster_dir = os.path.join(output_dir, raster_dir)
         self._jpg_dir = os.path.join(output_dir, jpg_dir)
         if not os.path.isfile(original_lines_image):
-            self._generate_masks()
+            self._generate_masks(include_border_pixels)
 
-    def _generate_masks(self):
+    def _generate_masks(self, include_border_pixels):
         """Create each mask and save in output dir"""
         # starting at 0,0 and scanning each pixel on the row for a white pixel.
         # When found a white pixel floodfill it and create a mask file in
@@ -82,7 +82,7 @@ class Handler(object):
             for col in range(left, right):
                 if pixels[(col, row)][3] > 0:
                     # start = time.perf_counter()
-                    mask_pixels = floodfill(pixels, bbox, (col, row))
+                    mask_pixels = floodfill(pixels, bbox, (col, row), include_border_pixels=include_border_pixels)
                     # stop = time.perf_counter()
                     # If the mask_pixels are not big enought merge to the next one that may be.
                     if len(mask_pixels) < 100: # and len(mask_pixels) > 10:
@@ -95,7 +95,8 @@ class Handler(object):
                                     (subcol, subrow)
                                 ][3] > 0:
                                     mask_pixels.update(floodfill(
-                                        pixels, bbox, (subcol, subrow)
+                                        pixels, bbox, (subcol, subrow),
+                                        include_border_pixels=include_border_pixels
                                     ))
                                     if len(mask_pixels) >= 100:
                                         sub_flood = True

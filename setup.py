@@ -2,12 +2,14 @@
 from setuptools import setup, find_packages
 import os
 
-__version__ = "0.3.1" # Also set in src/pixsaw/_version.py
+__version__ = "0.3.2"  # Also set in src/pixsaw/_version.py
 
 name = "pixsaw"
 
+
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+
 
 setup(
     name=name,

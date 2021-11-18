@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import logging
-import os
 from optparse import OptionParser
 
 from pixsaw.base import Handler
@@ -31,13 +30,19 @@ def main():
         type="string",
         help="Set the lines file.",
     )
+    parser.add_option(
+        "--gap",
+        default=True,
+        action="store_false",
+        help="Leave gap between pieces.",
+    )
 
     (options, args) = parser.parse_args()
 
     if not args and not (options.dir and options.lines):
         parser.error("Must set a directory and lines file with an image")
 
-    handler = Handler(options.dir, options.lines)
+    handler = Handler(options.dir, options.lines, include_border_pixels=options.gap)
     for image in args:
         handler.process(image)
 
