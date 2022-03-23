@@ -132,7 +132,7 @@ class Handler(object):
                         mask_pixels_width = (mask_pixels_right - mask_pixels_left) + 1
                         mask_pixels_height = (mask_pixels_bottom - mask_pixels_top) + 1
                         pixel_seq = [
-                            (0, 0, 0, 0)
+                            0
                             for x in range(0, (mask_pixels_width * mask_pixels_height))
                         ]
 
