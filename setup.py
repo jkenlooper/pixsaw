@@ -37,7 +37,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'future',
-        'Pillow >= 8.1.1, < 9',
+        'Pillow >= 8.4.0, < 10',
       ],
     entry_points="""
     [console_scripts]
