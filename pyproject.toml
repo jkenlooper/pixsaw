@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pixsaw"
+version = "0.3.4-alpha.1"
+description = "Cut a picture into pieces by cutting along pixel lines"
+readme = "README.md"
+license.text = "LGPLv3+"
+requires-python = ">=3.8, <4"
+authors = [
+    { name = "Jake Hickenlooper", email = "jake@weboftomorrow.com" },
+]
+dependencies = [
+    "Pillow >= 8.4.0, < 10",
+]
+
+[project.urls]
+Homepage = "https://github.com/jkenlooper/pixsaw"
+
+[project.optional-dependencies]
+test = [
+    "coverage",
+    "pytest",
+]
+dev = [
+]
+
+[project.scripts]
+pixsaw = "pixsaw.script:main"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+]

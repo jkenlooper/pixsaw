@@ -9,3 +9,8 @@
 /src/pixsaw.egg-info/
 /pyvenv.cfg
 /tmp-small-puzzle-example
+
+/dep/*
+!/dep/.gitkeep
+/security-issues-from-bandit.txt
+/output/

@@ -5,14 +5,12 @@ from optparse import OptionParser
 
 from pixsaw.base import Handler
 
-from pixsaw._version import __version__
-
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
     parser = OptionParser(
         usage="%prog --dir path/to/dir --lines lines.png [options] path/to/image",
-        version=__version__,
+        version="todo",
         description="Cut a picture into pieces by cutting along pixel lines",
     )
 
