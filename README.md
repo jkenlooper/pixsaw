@@ -1,8 +1,17 @@
 # Pixsaw
 
 Cuts an image up into multiple pieces by following pixel lines that contrast
-with targetted piece color.  Inspired by scissors, but more flexible with the
-drawback of possibly losing some pixels in the process.
+with targeted piece color. _Most_ pixels are kept in the process since very fine
+saw blades are used.
+
+Try out by running the `pixsaw.sh` script that will prompt for necessary options
+and run pixsaw inside a docker container. It will use the files in the examples
+directory by default.
+
+```bash
+# Build and run using docker
+./pixsaw.sh
+```
 
 ## Installing
 
@@ -22,7 +31,7 @@ pip install -e .
 
 ## Usage
 
-Running the `pixsaw.py` script will show some help.  It basically needs a
+Running the `pixsaw` script will show some help.  It basically needs a
 path to a directory to store the generated files, an image that shows where to
 cut, and the image that should be cut into pieces.
 
@@ -37,6 +46,7 @@ pixsaw --dir tmp-small-puzzle-example --lines examples/small-puzzle-lines.png ex
 
 
 ![Image example](https://github.com/jkenlooper/pixsaw/raw/master/examples/320px-White_Spoon_Osteospermum.jpg)
+
 Image from: http://en.wikipedia.org/wiki/File:White_Spoon_Osteospermum.JPG
 
 The output (combined into one file with glue to better show it):

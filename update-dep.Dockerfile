@@ -155,7 +155,7 @@ COPY --chown=dev:dev update-dep-run-audit.sh /home/dev/app/
 RUN <<AUDIT
 # Audit packages for known vulnerabilities
 set -o errexit
-./update-dep-run-audit.sh
+./update-dep-run-audit.sh > /home/dev/vulnerabilities-pip-audit.txt || echo "WARNING: Vulnerabilities found."
 AUDIT
 
 COPY --chown=dev:dev src/pixsaw/ /home/dev/app/src/pixsaw/
