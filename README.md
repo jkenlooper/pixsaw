@@ -42,13 +42,13 @@ mkdir tmp-small-puzzle-example
 pixsaw --dir tmp-small-puzzle-example --lines examples/small-puzzle-lines.png examples/320px-White_Spoon_Osteospermum.jpg
 ```
 
-![The puzzle lines](https://github.com/jkenlooper/pixsaw/raw/master/examples/small-puzzle-lines.png)
+![The puzzle lines](https://github.com/jkenlooper/pixsaw/raw/main/examples/small-puzzle-lines.png)
 
 
-![Image example](https://github.com/jkenlooper/pixsaw/raw/master/examples/320px-White_Spoon_Osteospermum.jpg)
+![Image example](https://github.com/jkenlooper/pixsaw/raw/main/examples/320px-White_Spoon_Osteospermum.jpg)
 
 Image from: http://en.wikipedia.org/wiki/File:White_Spoon_Osteospermum.JPG
 
 The output (combined into one file with glue to better show it):
 
-![Output of pixsaw](https://github.com/jkenlooper/pixsaw/raw/master/examples/pieces-combined-with-glue.png)
+![Output of pixsaw](https://github.com/jkenlooper/pixsaw/raw/main/examples/pieces-combined-with-glue.png)
