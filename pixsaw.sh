@@ -31,6 +31,7 @@ if [ "$is_docker_up" = "no" ]; then
 fi
 
 echo "INFO $script_name: Running update-dep.sh script to update dependencies..."
+"$project_dir/update-dep.sh"
 
 image_name="$project_name"
 container_name="$project_name"
