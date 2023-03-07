@@ -171,9 +171,8 @@ class Handler(object):
                         masks[mask_id] = m_bbox
                         mask_index = mask_index + 1
 
-        masks_json_file = open(os.path.join(self._output_dir, "masks.json"), "w")
-        json.dump(masks, masks_json_file)
-        masks_json_file.close()
+        with open(os.path.join(self._output_dir, "masks.json"), "w") as masks_json_file:
+            json.dump(masks, masks_json_file)
 
     def process(self, image):
         """Cut up the image based on the saved masks generated from the
@@ -183,8 +182,8 @@ class Handler(object):
         """
         im = Image.open(image)
         width, height = im.size
-        masks_json_file = open(os.path.join(self._output_dir, "masks.json"), "r")
-        masks = json.load(masks_json_file)
+        with open(os.path.join(self._output_dir, "masks.json"), "r") as masks_json_file:
+            masks = json.load(masks_json_file)
         piece_id_to_mask = {}
         pieces = {}
         mask_files = glob(os.path.join(self._mask_dir, f"{self.mask_prefix}*.bmp"))
@@ -237,9 +236,7 @@ class Handler(object):
         im.close()
 
         # Write new pieces.json
-        pieces_json_file = open(os.path.join(self._output_dir, "pieces.json"), "w")
-        json.dump(pieces, pieces_json_file)
-        piece_id_to_mask_json_file = open(
-            os.path.join(self._output_dir, "piece_id_to_mask.json"), "w"
-        )
-        json.dump(piece_id_to_mask, piece_id_to_mask_json_file)
+        with open(os.path.join(self._output_dir, "pieces.json"), "w") as pieces_json_file:
+            json.dump(pieces, pieces_json_file)
+        with open( os.path.join(self._output_dir, "piece_id_to_mask.json"), "w") as piece_id_to_mask_json_file:
+            json.dump(piece_id_to_mask, piece_id_to_mask_json_file)

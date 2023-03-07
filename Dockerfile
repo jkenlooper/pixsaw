@@ -87,11 +87,6 @@ python -m pip install \
   -r /home/dev/app/pip-requirements.txt
 PIP_INSTALL
 
-
-# The dep directory should include the wheels and other source packages
-# created from running the verify.sh script.
-#COPY --chown=dev:dev dep /usr/local/src/app/dep
-
 COPY --chown=dev:dev requirements.txt /home/dev/app/requirements.txt
 COPY --chown=dev:dev requirements-dev.txt /home/dev/app/requirements-dev.txt
 COPY --chown=dev:dev requirements-test.txt /home/dev/app/requirements-test.txt
