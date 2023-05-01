@@ -65,12 +65,6 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 COPY --chown=dev:dev pip-requirements.txt /home/dev/app/pip-requirements.txt
 COPY --chown=dev:dev dep /home/dev/app/dep
 
-#RUN <<PIP_INSTALL
-## Install pip and wheel
-#set -o errexit
-#su dev -c "python -m pip install -r /etc/chillbox/pip-requirements.txt"
-#PIP_INSTALL
-
 USER dev
 
 RUN <<PIP_INSTALL

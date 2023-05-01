@@ -112,8 +112,6 @@ HERE
 chmod +x /home/dev/sleep.sh
 SETUP
 
-COPY --chown=dev:dev README.md /home/dev/app/README.md
-
 RUN <<PIP_DOWNLOAD_APP_DEPENDENCIES
 # Download python packages described in pyproject.toml
 set -o errexit
