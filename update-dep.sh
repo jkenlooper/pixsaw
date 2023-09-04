@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Modified from the original in python-worker directory in https://github.com/jkenlooper/cookiecutters .
+# Modified from the original in python-worker directory in https://git.sr.ht/~jkenlooper/cookiecutters .
 
 set -o errexit
 
