@@ -14,6 +14,4 @@
 
 /dep/*
 !/dep/.gitkeep
-/security-issues-from-bandit.txt
-/vulnerabilities-pip-audit.txt
 /output/
