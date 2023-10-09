@@ -13,7 +13,7 @@ authors = [
     { name = "Jake Hickenlooper", email = "jake@weboftomorrow.com" },
 ]
 dependencies = [
-    "Pillow >= 8.4.0, < 10",
+    "Pillow >= 8.4.0, < 11",
 ]
 
 [project.urls]
