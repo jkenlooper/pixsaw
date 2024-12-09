@@ -1,6 +1,7 @@
 from builtins import range
 from builtins import object
 import os.path
+from os import makedirs
 from glob import glob
 import json
 import logging
@@ -45,6 +46,7 @@ class Handler(object):
         :param output_dir: Output to this directory
         :param lines_image: Path to the lines image
         """
+        makedirs(output_dir, exist_ok=True)
         if not os.path.isdir(output_dir):
             raise HandlerError("output directory is not a directory")
 

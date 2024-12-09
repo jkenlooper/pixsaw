@@ -1,15 +1,10 @@
-# Modified from the original in python-worker directory in https://git.sr.ht/~jkenlooper/cookiecutters .
-
 *
-!/requirements.txt
-!/requirements-dev.txt
-!/requirements-test.txt
+!/pip-audit.sh
 !/pip-requirements.txt
 !/update-dep-run-audit.sh
 !/pyproject.toml
 !/src/*
 !/README.md
 !/tests/*
-!/dep/*
 !/COPYING
 !/COPYING.LESSER

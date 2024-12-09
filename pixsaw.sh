@@ -30,9 +30,6 @@ if [ "$is_docker_up" = "no" ]; then
   exit 1
 fi
 
-echo "INFO $script_name: Running update-dep.sh script to update dependencies..."
-"$project_dir/update-dep.sh"
-
 image_name="$project_name"
 container_name="$project_name"
 docker stop --time 1 "$container_name" > /dev/null 2>&1 || printf ''
@@ -81,11 +78,17 @@ echo "
 echo "INFO $script_name: Creating files in $output_dir directory."
 bn_lines_file="$(basename "$lines_file")"
 bn_image_file="$(basename "$image_file")"
+output_tmp="$(openssl rand -base64 12 | tr '+/=' '_')"
 docker run -i --tty \
     --name "$container_name" \
     --mount "type=bind,src=$lines_file,dst=/data/$bn_lines_file,readonly=true" \
     --mount "type=bind,src=$image_file,dst=/data/$bn_image_file,readonly=true" \
-    "$image_name" --dir=/home/dev/app/output --lines="/data/$bn_lines_file" "/data/$bn_image_file"
-docker cp --quiet "$container_name:/home/dev/app/output/" "$output_dir"
+    --mount "type=volume,src=$container_name-output,dst=/data/output" \
+    "$image_name" --dir="/data/output/$output_tmp" --lines="/data/$bn_lines_file" "/data/$bn_image_file"
+docker cp --quiet "$container_name:/data/output/$output_tmp/" "$output_dir/"
 docker stop --time 1 "$container_name" > /dev/null 2>&1 || printf ''
 docker container rm "$container_name" > /dev/null 2>&1 || printf ''
+
+echo "
+Created files in output directory: $output_dir/$output_tmp/
+"
