@@ -35,8 +35,9 @@ class Handler(object):
 
     mask_prefix = "m-"
     piece_prefix = "p-"
+    no_mask_prefix = "n-"
 
-    def __init__(self, output_dir, lines_image, mask_dir="", raster_dir="", jpg_dir="", include_border_pixels=True):
+    def __init__(self, output_dir, lines_image, mask_dir="", raster_dir="", jpg_dir="", include_border_pixels=True, no_mask_raster_dir="",):
         """Handler constructor
         Fills an output directory with the generated masks based on
         lines drawn on an image.  Skips creating masks if output directory is
@@ -56,6 +57,7 @@ class Handler(object):
         self._output_dir = output_dir
         self._mask_dir = os.path.join(output_dir, mask_dir)
         self._raster_dir = os.path.join(output_dir, raster_dir)
+        self._no_mask_raster_dir = os.path.join(output_dir, no_mask_raster_dir)
         self._jpg_dir = os.path.join(output_dir, jpg_dir)
         if not os.path.isfile(original_lines_image):
             self._generate_masks(include_border_pixels)
@@ -205,6 +207,7 @@ class Handler(object):
             piece_with_padding = im.crop(bbox_with_padding)
             piece = im.crop(bbox)
             transparent_blank = Image.new("RGBA", piece.size, (0, 0, 0, 0))
+            no_mask_blank = Image.new("RGBA", piece.size, (0, 0, 0))
             black_blank_with_padding = Image.new("RGB", piece_with_padding.size, (0, 0, 0))
             maskimg_with_padding = black_blank_with_padding.copy()
             maskimg = Image.open(mask_file)
@@ -217,6 +220,7 @@ class Handler(object):
             maskimg_with_padding.save(os.path.join(self._mask_dir, f"{self.mask_prefix}{mask_id}-padding.bmp"))
             black_blank_with_padding.paste(piece_with_padding, box=(0, 0), mask=maskimg_with_padding)
             transparent_blank.paste(piece, box=(0, 0), mask=maskimg)
+            no_mask_blank.paste(piece, box=(0, 0))
             piece_with_padding.close()
             maskimg_with_padding.close()
             maskimg.close()
@@ -224,6 +228,10 @@ class Handler(object):
                 os.path.join(self._raster_dir, f"{self.piece_prefix}{piecename}.png")
             )
             transparent_blank.close()
+            no_mask_blank.save(
+                os.path.join(self._no_mask_raster_dir, f"{self.no_mask_prefix}{piecename}.png")
+            )
+            no_mask_blank.close()
             black_blank_with_padding.save(
                 os.path.join(
                     self._jpg_dir,
