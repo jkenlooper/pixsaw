@@ -178,7 +178,7 @@ class Handler(object):
         with open(os.path.join(self._output_dir, "masks.json"), "w") as masks_json_file:
             json.dump(masks, masks_json_file)
 
-    def process(self, image):
+    def process(self, image, exclude_size=(None,None)):
         """Cut up the image based on the saved masks generated from the
         lines_image.
 
@@ -194,6 +194,17 @@ class Handler(object):
         # Shuffle the mask files so it isn't easy to guess the ordering
         shuffle(mask_files)
         for (mask_count, mask_file) in enumerate(mask_files):
+            maskimg = Image.open(mask_file)
+
+            if exclude_size[0] or exclude_size[1]:
+                maskimg_width, maskimg_height = maskimg.size
+                if exclude_size[0] and maskimg_width >= exclude_size[0]:
+                    maskimg.close()
+                    continue
+                if exclude_size[1] and maskimg_height >= exclude_size[1]:
+                    maskimg.close()
+                    continue
+
             maskname = os.path.basename(mask_file)
             mask_id = os.path.splitext(maskname)[0][len(self.mask_prefix):]
             piece_id_to_mask[mask_count] = mask_id
@@ -210,7 +221,6 @@ class Handler(object):
             no_mask_blank = Image.new("RGBA", piece.size, (0, 0, 0))
             black_blank_with_padding = Image.new("RGB", piece_with_padding.size, (0, 0, 0))
             maskimg_with_padding = black_blank_with_padding.copy()
-            maskimg = Image.open(mask_file)
             maskimg_with_padding.paste(maskimg, box=(int(HALF_BLEED), int(HALF_BLEED)))
             if BLEED != 0:
                 maskimg_with_padding = maskimg_with_padding.convert("L")
