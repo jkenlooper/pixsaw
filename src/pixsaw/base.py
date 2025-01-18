@@ -37,7 +37,7 @@ class Handler(object):
     piece_prefix = "p-"
     no_mask_prefix = "n-"
 
-    def __init__(self, output_dir, lines_image, mask_dir="", raster_dir="", jpg_dir="", include_border_pixels=True, no_mask_raster_dir="",):
+    def __init__(self, output_dir, lines_image, mask_dir="", raster_dir="", jpg_dir="", include_border_pixels=True, no_mask_raster_dir="", floodfill_min=400, floodfill_max=50_000_000):
         """Handler constructor
         Fills an output directory with the generated masks based on
         lines drawn on an image.  Skips creating masks if output directory is
@@ -53,6 +53,9 @@ class Handler(object):
 
         original_lines_image = os.path.join(output_dir, os.path.basename(lines_image))
 
+        self._floodfill_min = floodfill_min
+        self._floodfill_max = floodfill_max
+
         self._lines_image = lines_image
         self._output_dir = output_dir
         self._mask_dir = os.path.join(output_dir, mask_dir)
@@ -60,14 +63,19 @@ class Handler(object):
         self._no_mask_raster_dir = os.path.join(output_dir, no_mask_raster_dir)
         self._jpg_dir = os.path.join(output_dir, jpg_dir)
         if not os.path.isfile(original_lines_image):
-            self._generate_masks(include_border_pixels)
+            masks = self._generate_masks(include_border_pixels)
+            with open(os.path.join(self._output_dir, "masks.json"), "w") as masks_json_file:
+                json.dump(masks, masks_json_file)
 
     def _generate_masks(self, include_border_pixels):
-        """Create each mask and save in output dir"""
+        """Create each mask and return masks dictionary"""
         # starting at 0,0 and scanning each pixel on the row for a white pixel.
         # When found a white pixel floodfill it and create a mask file in
         # output dir.  Replace flooded pixels with transparent pixels and
         # continue.
+        # No warning about possible DecompressionBombWarning since the image
+        # being used is trusted.
+        Image.MAX_IMAGE_PIXELS = None
         im = Image.open(self._lines_image).convert("RGBA")
 
         lines_image_name = os.path.basename(self._lines_image)
@@ -78,60 +86,74 @@ class Handler(object):
         left, top, right, bottom = bbox
         width, height = im.size
         im.close()
-        mask_index = 0
 
         # scan line by line for pixels that are not transparent
+        targetcolor = (255, 255, 255, 255)
         masks = {}
+        #start = time.perf_counter()
         for row in range(top, bottom):
             for col in range(left, right):
                 if pixels[(col, row)][3] > 0:
-                    # start = time.perf_counter()
-                    mask_pixels = floodfill(pixels, bbox, (col, row), include_border_pixels=include_border_pixels)
-                    # stop = time.perf_counter()
-                    # If the mask_pixels are not big enought merge to the next one that may be.
-                    if len(mask_pixels) < 100: # and len(mask_pixels) > 10:
-                        sub_flood = False  # for breaking out of the for loops
-                        for subrow in range(row, min(row + 2, bottom)):
-                            if sub_flood:
-                                break
-                            for subcol in range(col, min(col + 2, right)):
-                                if (subcol, subrow) not in mask_pixels and pixels[
-                                    (subcol, subrow)
-                                ][3] > 0:
-                                    mask_pixels.update(floodfill(
-                                        pixels, bbox, (subcol, subrow),
-                                        include_border_pixels=include_border_pixels
-                                    ))
-                                    if len(mask_pixels) >= 100:
+                    (mask_pixels, mask_pixels_bbox) = floodfill(pixels, bbox, (col, row), targetcolor=targetcolor, include_border_pixels=include_border_pixels, clip_max=self._floodfill_max)
+                    if len(mask_pixels) == 0:
+                        continue
+                    (mask_pixels_left, mask_pixels_top, mask_pixels_right, mask_pixels_bottom) = mask_pixels_bbox
+
+                    # If the mask_pixels are not big enough merge to the next one that may be.
+                    sub_flood = False  # for breaking out of the for loops
+                    if len(mask_pixels) < self._floodfill_min:  # and len(mask_pixels) > 10:
+                        logger.info(f"{len(mask_pixels)=}")
+                        mask_pixels_set = set(mask_pixels)
+
+                        sub_flood_edge = {(col, row)}
+                        sub_flood_full_edge = set()
+                        while sub_flood_edge:
+                            sub_flood_new_edge = set()
+                            for x, y in sub_flood_edge:  # 4 adjacent method
+                                if sub_flood:
+                                    break
+                                for s, t in (
+                                    (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
+                                ):
+
+                                    if s >= right or t >= bottom:
                                         sub_flood = True
                                         break
-                    if len(mask_pixels) >= 100:
-                        # logger.info(f"floodfill {stop - start}")
-                        # Use base64 of the mask_index to hint that the cut
-                        # piece filename which uses base10 does not correlate
-                        # with the base64 mask file name.
-                        mask_id = (
-                            base64.urlsafe_b64encode(bytes(str(mask_index), 'utf8'))
-                            .decode()
-                            .replace("=", "")
-                        )
+                                    adjacent = (s, t)
+                                    if adjacent in sub_flood_full_edge or s >= right or s < left or t >= bottom or t < top:
+                                        continue
+                                    try:
+                                        p = pixels[adjacent]
+                                    except (ValueError, IndexError):
+                                        pass
+                                    else:
+                                        sub_flood_full_edge.add(adjacent)
+                                        sub_flood_new_edge.add(adjacent)
+                                        if adjacent not in mask_pixels_set and p[3] != 0:
+                                            (extend_mask_pixels, mask_pixels_bbox) = floodfill(
+                                                pixels, bbox, adjacent,
+                                                targetcolor=targetcolor,
+                                                include_border_pixels=include_border_pixels,
+                                                clip_max=self._floodfill_max,
+                                            )
+                                            if len(extend_mask_pixels) == 0:
+                                                continue
+                                            mask_pixels_left = min(mask_pixels_left, mask_pixels_bbox[0])
+                                            mask_pixels_top = min(mask_pixels_top, mask_pixels_bbox[1])
+                                            mask_pixels_right = max(mask_pixels_right, mask_pixels_bbox[2])
+                                            mask_pixels_bottom = max(mask_pixels_bottom, mask_pixels_bbox[3])
+                                            mask_pixels.extend(extend_mask_pixels)
+                                            if len(mask_pixels) >= self._floodfill_min:
+                                                sub_flood = True
+                                                break
+                                            else:
+                                                extend_mask_pixels_set = set(extend_mask_pixels)
+                                                mask_pixels_set.update(extend_mask_pixels_set)
+                            sub_flood_full_edge = sub_flood_edge  # discard pixels processed
+                            sub_flood_edge = sub_flood_new_edge
 
-                        # Create mask image and save under mask_id
-                        # start = time.perf_counter()
-                        maskimg = Image.new("1", (width, height), 0)
-                        # stop = time.perf_counter()
-                        # logger.info(f"init blank mask {stop - start}")
-
-                        # start = time.perf_counter()
-                        mask_pixels_top = bottom
-                        mask_pixels_right = left
-                        mask_pixels_bottom = top
-                        mask_pixels_left = right
-                        for (x, y) in mask_pixels:
-                            mask_pixels_top = min(mask_pixels_top, y)
-                            mask_pixels_right = max(mask_pixels_right, x)
-                            mask_pixels_bottom = max(mask_pixels_bottom, y)
-                            mask_pixels_left = min(mask_pixels_left, x)
+                    if len(mask_pixels) >= self._floodfill_min or sub_flood:
+                        mask_id = "_".join(map(str, (col, row, mask_pixels_right, mask_pixels_bottom)))
 
                         mask_pixels_width = (mask_pixels_right - mask_pixels_left) + 1
                         mask_pixels_height = (mask_pixels_bottom - mask_pixels_top) + 1
@@ -153,30 +175,25 @@ class Handler(object):
                             0,
                         )
                         floodmaskimg.putdata(pixel_seq)
-                        maskimg.paste(floodmaskimg, (mask_pixels_left, mask_pixels_top))
-                        floodmaskimg.close()
-
-                        m_bbox = maskimg.getbbox()
-                        # stop = time.perf_counter()
-                        # logger.info(f"flood mask {stop - start}")
-
-                        # start = time.perf_counter()
-                        maskimg = maskimg.crop(m_bbox)
-                        maskimg.save(
+                        floodmaskimg.save(
                             os.path.join(
                                 self._mask_dir, f"{self.mask_prefix}{mask_id}.bmp"
                             )
                         )
-                        # stop = time.perf_counter()
-                        # logger.info(f"save mask {stop - start}")
-                        maskimg.close()
+                        floodmaskimg.close()
 
+                        m_bbox = (
+                            mask_pixels_left,
+                            mask_pixels_top,
+                            mask_pixels_right + 1,
+                            mask_pixels_bottom + 1,
+                        )
                         # Save the mask bbox
                         masks[mask_id] = m_bbox
-                        mask_index = mask_index + 1
 
-        with open(os.path.join(self._output_dir, "masks.json"), "w") as masks_json_file:
-            json.dump(masks, masks_json_file)
+        #stop = time.perf_counter()
+        #logger.info(f"masks {(stop - start):.5f}")
+        return masks
 
     def process(self, image, exclude_size=(None,None)):
         """Cut up the image based on the saved masks generated from the

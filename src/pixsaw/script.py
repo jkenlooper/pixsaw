@@ -35,13 +35,27 @@ def main():
         action="store_false",
         help="Leave gap between pieces.",
     )
+    parser.add_option(
+        "--floodfill-min",
+        action="store",
+        default=400,
+        type="int",
+        help="Minimum pixels to floodfill for a piece",
+    )
+    parser.add_option(
+        "--floodfill-max",
+        action="store",
+        default=50_000_000,
+        type="int",
+        help="Max pixels to floodfill at a time",
+    )
 
     (options, args) = parser.parse_args()
 
     if not args and not (options.dir and options.lines):
         parser.error("Must set a directory and lines file with an image")
 
-    handler = Handler(options.dir, options.lines, include_border_pixels=options.gap)
+    handler = Handler(options.dir, options.lines, include_border_pixels=options.gap, floodfill_min=options.floodfill_min, floodfill_max=options.floodfill_max)
     for image in args:
         handler.process(image)
 

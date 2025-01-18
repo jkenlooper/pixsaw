@@ -1,92 +1,92 @@
-# from itertools import chain
-
-def floodfill(pixels, bbox, origin=None, targetcolor=(255, 255, 255, 255), tolerance=0, include_border_pixels=True):
-    """Flood Fill at origin using a stack.
-    Returns a set of pixels that were filled.
+def floodfill(pixels, bbox, origin=None, targetcolor=(255, 255, 255, 255), tolerance=0, include_border_pixels=True, clip_max=50_000_000):
+    """Flood Fill at origin.
+    Returns a list of pixels that were filled along with farthest right and bottom pixel positions.
 
     :param pixels: sequence of pixels for a lines_image
     :param bbox: Bounding box to stay within
     :param origin: Point to floodfill at. Defaults to left, top of bbox.
     :param targetcolor: The Target color pixel with alpha.
     :param tolerance: Fuzziness when filling in.
+    :param include_border_pixels: Include border pixels
+    :param clip_max: Maximum pixels to flood
     """
     left, top, right, bottom = bbox
     if origin is None:
         origin = (left, top)
 
-    thestack = set()
-    thestack.add(origin)
-    clip = set()
-    skips = set()
+    clip = list()
+    clip_left, clip_top, clip_right, clip_bottom = (0, 0, 0, 0)
+    border = set()
 
-    def has_value(x, y):
-        try:
-            p = pixels[(x, y)]
-        except IndexError:
-            return False
-        if p != targetcolor:
-            if p[3] > tolerance:  # if not completly transparent
-                return True
-        return False
+    # Pulled from Pillow ImageDraw.floodfill
+    x, y = origin
+    try:
+        p = pixels[origin]
+    except (ValueError, IndexError):
+        return (clip, (clip_left, clip_top, clip_right, clip_bottom))
 
-    while len(thestack) != 0:
-        x, y = thestack.pop()
+    if p == targetcolor:
+        return (clip, (clip_left, clip_top, clip_right, clip_bottom))
 
-        if (x, y) in clip:
-            continue
+    clip.append(origin)
 
-        if x >= right or x < left or y >= bottom or y < top:
-            continue
+    clip_left, clip_top, clip_right, clip_bottom = (x, y, max(clip_right, x), max(clip_bottom, y))
 
-        p = pixels[(x, y)]
-        pixel_right = (x + 1, y)
-        pixel_left = (x - 1, y)
-        pixel_down = (x, y + 1)
-        pixel_up = (x, y - 1)
-        if p != targetcolor:
-            # if not completly transparent and not already skipped
-            if include_border_pixels and p[3] > tolerance and (x, y) not in skips:
-                # include border pixels
-                clip.add((x, y))
+    edge = {origin}
+    # use a set to keep record of current and previous edge pixels
+    # to reduce memory consumption
+    full_edge = set()
+    while edge:
+        new_edge = set()
+        for x, y in edge:  # 4 adjacent method
+            for s, t in (
+                    (x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1),
+            ):
+                adjacent = (s, t)
+                # If already processed, or if a coordinate is outside of bbox, skip
+                if adjacent in full_edge or adjacent in border or s > right or s < left or t > bottom or t < top:
+                    continue
+                try:
+                    p = pixels[adjacent]
+                except (ValueError, IndexError):
+                    pass
+                else:
+                    full_edge.add(adjacent)
+                    if p == targetcolor:
+                        clip.append(adjacent)
+                        clip_left, clip_top, clip_right, clip_bottom = (min(clip_left, s), min(clip_top, t), max(clip_right, s), max(clip_bottom, t))
 
-                if has_value(*pixel_right):
-                    clip.add(pixel_right)
-                if has_value(*pixel_left):
-                    clip.add(pixel_left)
-                if has_value(*pixel_down):
-                    clip.add(pixel_down)
-                if has_value(*pixel_up):
-                    clip.add(pixel_up)
+                        new_edge.add(adjacent)
+                    elif include_border_pixels and p[3] > tolerance:  # not transparent and is border color
+                        clip.append(adjacent)
+                        clip_left, clip_top, clip_right, clip_bottom = (min(clip_left, s), min(clip_top, t), max(clip_right, s), max(clip_bottom, t))
+                        border.add(adjacent)
+                        # Extend to all adjacent pixels in all 8 directions when
+                        # including the border pixels. This ensures a smoother
+                        # edge.
+                        for a, b in (
+                            (s + 1, t), (s - 1, t), (s, t + 1), (s, t - 1),
+                            (s + 1, t + 1), (s - 1, t - 1), (s - 1, t + 1), (s + 1, t - 1),
+                        ):
+                            border_adjacent = (a, b)
+                            if border_adjacent in full_edge or border_adjacent in border or a > right or a < left or b > bottom or b < top:
+                                continue
+                            try:
+                                d = pixels[border_adjacent]
+                            except (ValueError, IndexError):
+                                pass
+                            else:
+                                if d != targetcolor and d[3] > tolerance:  # not transparent and is border color
+                                    clip.append(border_adjacent)
+                                    clip_left, clip_top, clip_right, clip_bottom = (min(clip_left, a), min(clip_top, b), max(clip_right, a), max(clip_bottom, b))
+                                    border.add(border_adjacent)
 
-                pixel_right_up = (x + 1, y - 1)
-                pixel_right_down = (x + 1, y + 1)
-                pixel_left_up = (x - 1, y - 1)
-                pixel_left_down = (x - 1, y + 1)
-                for extend_pixel in [pixel_right_up, pixel_right_down, pixel_left_up, pixel_left_down]:
-                    if has_value(*extend_pixel):
-                        clip.add(extend_pixel)
-                        skips.add(extend_pixel)
+        full_edge = edge  # discard pixels processed
+        edge = new_edge
 
-                # Could extend it further by grabbing all the surrounding
-                # pixels. Not doing this as it is mostly a bad idea since only
-                # really want the diagonal pixels.
-                #
-                # extend = 4
-                # tl = (x - int(extend / 2), y - int(extend / 2))
-                # xr = range(tl[0], tl[0] + extend + 1)
-                # yr = range(tl[1], tl[1] + extend + 1)
-                # for extend_pixel in chain.from_iterable(map(lambda i: zip(xr, [yr[i]] * (extend + 1)), range(extend + 1))):
-                #     if has_value(*extend_pixel):
-                #         clip.add(extend_pixel)
-                #         skips.add(extend_pixel)
+        if len(clip) > clip_max:
+            # Avoid running out of memory for extra large pieces.
+            break
 
-            continue
 
-        clip.add((x, y))
-
-        thestack.add(pixel_right)
-        thestack.add(pixel_left)
-        thestack.add(pixel_down)
-        thestack.add(pixel_up)
-
-    return clip
+    return (clip, (clip_left, clip_top, clip_right, clip_bottom))
