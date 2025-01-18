@@ -4,7 +4,7 @@
 #
 #    pip-compile --allow-unsafe --extra=dev --extra=test --output-file=./requirements.txt pyproject.toml
 #
-coverage==7.6.9
+coverage==7.6.10
     # via pixsaw (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

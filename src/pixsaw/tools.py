@@ -61,9 +61,11 @@ def floodfill(pixels, bbox, origin=None, targetcolor=(255, 255, 255, 255), toler
                         clip.append(adjacent)
                         clip_left, clip_top, clip_right, clip_bottom = (min(clip_left, s), min(clip_top, t), max(clip_right, s), max(clip_bottom, t))
                         border.add(adjacent)
-                        # Extend to all adjacent pixels in all 8 directions when
-                        # including the border pixels. This ensures a smoother
-                        # edge.
+                        # Extend to adjacent pixels when including the border
+                        # pixels. This helps with getting a smoother edge on
+                        # pieces.
+                        # Adding the diagonal adjacent pixels increases the risk
+                        # of joining two pieces if the border is too faint.
                         for a, b in (
                             (s + 1, t), (s - 1, t), (s, t + 1), (s, t - 1),
                             (s + 1, t + 1), (s - 1, t - 1), (s - 1, t + 1), (s + 1, t - 1),

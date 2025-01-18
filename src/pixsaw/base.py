@@ -101,8 +101,7 @@ class Handler(object):
 
                     # If the mask_pixels are not big enough merge to the next one that may be.
                     sub_flood = False  # for breaking out of the for loops
-                    if len(mask_pixels) < self._floodfill_min:  # and len(mask_pixels) > 10:
-                        logger.info(f"{len(mask_pixels)=}")
+                    if len(mask_pixels) < self._floodfill_min and len(mask_pixels) > 10:
                         mask_pixels_set = set(mask_pixels)
 
                         sub_flood_edge = {(col, row)}
