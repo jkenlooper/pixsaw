@@ -1,12 +1,13 @@
 from builtins import range
 from builtins import object
 import os.path
-from os import makedirs
+from os import makedirs, mkdir
 from glob import glob
 import json
 import logging
 from random import shuffle
 import base64
+from pathlib import Path
 # import time
 
 from PIL import Image
@@ -194,14 +195,18 @@ class Handler(object):
         #logger.info(f"masks {(stop - start):.5f}")
         return masks
 
-    def process(self, image, exclude_size=(None,None)):
-        """Cut up the image based on the saved masks generated from the
+    def process(self, images, exclude_size=(None,None)):
+        """Cut up the images based on the saved masks generated from the
         lines_image.
-
-        :param image: Path to image that will be cut
+        :param images: Paths to images that will be cut
         """
-        im = Image.open(image)
-        width, height = im.size
+        im_sides = tuple(map(Image.open, images))
+        width, height = im_sides[0].size
+        if any(map(lambda im: (width, height) != im.size, im_sides)):
+            raise HandlerError("All images used must be the same size in width and height.")
+        for image_index, _ in enumerate(im_sides):
+            for d in (self._raster_dir, self._no_mask_raster_dir, self._jpg_dir):
+                Path(d).joinpath(f"image-{image_index}").mkdir(exist_ok=True)
         with open(os.path.join(self._output_dir, "masks.json"), "r") as masks_json_file:
             masks = json.load(masks_json_file)
         piece_id_to_mask = {}
@@ -231,12 +236,8 @@ class Handler(object):
             bbox_with_padding[1] = bbox[1] - int(HALF_BLEED)
             bbox_with_padding[2] = bbox[2] + int(HALF_BLEED)
             bbox_with_padding[3] = bbox[3] + int(HALF_BLEED)
-            piece_with_padding = im.crop(bbox_with_padding)
-            piece = im.crop(bbox)
-            transparent_blank = Image.new("RGBA", piece.size, (0, 0, 0, 0))
-            no_mask_blank = Image.new("RGBA", piece.size, (0, 0, 0))
-            black_blank_with_padding = Image.new("RGB", piece_with_padding.size, (0, 0, 0))
-            maskimg_with_padding = black_blank_with_padding.copy()
+
+            maskimg_with_padding = Image.new("RGB", (bbox_with_padding[2] - bbox_with_padding[0], bbox_with_padding[3] - bbox_with_padding[1]), (0, 0, 0))
             maskimg_with_padding.paste(maskimg, box=(int(HALF_BLEED), int(HALF_BLEED)))
             if BLEED != 0:
                 maskimg_with_padding = maskimg_with_padding.convert("L")
@@ -244,32 +245,45 @@ class Handler(object):
                 maskimg_with_padding = maskimg_with_padding.point(lambda x: 255 if x > 1 else 0)
             maskimg_with_padding = maskimg_with_padding.convert("1")
             maskimg_with_padding.save(os.path.join(self._mask_dir, f"{self.mask_prefix}{mask_id}-padding.bmp"))
-            black_blank_with_padding.paste(piece_with_padding, box=(0, 0), mask=maskimg_with_padding)
-            transparent_blank.paste(piece, box=(0, 0), mask=maskimg)
-            no_mask_blank.paste(piece, box=(0, 0))
-            piece_with_padding.close()
-            maskimg_with_padding.close()
-            maskimg.close()
-            transparent_blank.save(
-                os.path.join(self._raster_dir, f"{self.piece_prefix}{piecename}.png")
-            )
-            transparent_blank.close()
-            no_mask_blank.save(
-                os.path.join(self._no_mask_raster_dir, f"{self.no_mask_prefix}{piecename}.png")
-            )
-            no_mask_blank.close()
-            black_blank_with_padding.save(
-                os.path.join(
-                    self._jpg_dir,
-                    f"{self.piece_prefix}{piecename}.jpg",
-                )
-            )
-            black_blank_with_padding.close()
 
+            for image_index, im in enumerate(im_sides):
+                piece_with_padding = im.crop(bbox_with_padding)
+                piece = im.crop(bbox)
+
+                black_blank_with_padding = Image.new("RGB", piece_with_padding.size, (0, 0, 0))
+                black_blank_with_padding.paste(piece_with_padding, box=(0, 0), mask=maskimg_with_padding)
+
+                transparent_blank = Image.new("RGBA", piece.size, (0, 0, 0, 0))
+                transparent_blank.paste(piece, box=(0, 0), mask=maskimg)
+                no_mask_blank = Image.new("RGBA", piece.size, (0, 0, 0))
+                no_mask_blank.paste(piece, box=(0, 0))
+
+                piece.close()
+                piece_with_padding.close()
+                transparent_blank.save(
+                    os.path.join(self._raster_dir, f"image-{image_index}", f"{self.piece_prefix}{piecename}.png")
+                )
+                transparent_blank.close()
+                no_mask_blank.save(
+                    os.path.join(self._no_mask_raster_dir, f"image-{image_index}", f"{self.no_mask_prefix}{piecename}.png")
+                )
+                no_mask_blank.close()
+                black_blank_with_padding.save(
+                    os.path.join(
+                        self._jpg_dir,
+                        f"image-{image_index}",
+                        f"{self.piece_prefix}{piecename}.jpg",
+                    )
+                )
+                black_blank_with_padding.close()
+
+            maskimg.close()
+            maskimg_with_padding.close()
             # Copy the bbox from mask to pieces dict which will now have 'shuffled' int id's
             pieces[mask_count] = bbox
 
-        im.close()
+        for im in im_sides:
+            im.close()
 
         # Write new pieces.json
         with open(os.path.join(self._output_dir, "pieces.json"), "w") as pieces_json_file:
