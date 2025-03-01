@@ -17,7 +17,7 @@ from pixsaw.tools import floodfill
 
 
 BLEED = 2
-HALF_BLEED = BLEED * 0.5
+HALF_BLEED = int(BLEED * 0.5)
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -230,18 +230,19 @@ class Handler(object):
             mask_id = os.path.splitext(maskname)[0][len(self.mask_prefix):]
             piece_id_to_mask[mask_count] = mask_id
             piecename = f"{self.mask_prefix}{mask_count}"
-            bbox = masks.get(mask_id)
-            bbox_with_padding = list(range(0, 4))
-            bbox_with_padding[0] = bbox[0] - int(HALF_BLEED)
-            bbox_with_padding[1] = bbox[1] - int(HALF_BLEED)
-            bbox_with_padding[2] = bbox[2] + int(HALF_BLEED)
-            bbox_with_padding[3] = bbox[3] + int(HALF_BLEED)
+            bbox = tuple(masks.get(mask_id))
+            bbox_with_padding = (
+                bbox[0] - HALF_BLEED,
+                bbox[1] - HALF_BLEED,
+                bbox[2] + HALF_BLEED,
+                bbox[3] + HALF_BLEED,
+            )
 
             maskimg_with_padding = Image.new("RGB", (bbox_with_padding[2] - bbox_with_padding[0], bbox_with_padding[3] - bbox_with_padding[1]), (0, 0, 0))
-            maskimg_with_padding.paste(maskimg, box=(int(HALF_BLEED), int(HALF_BLEED)))
+            maskimg_with_padding.paste(maskimg, box=(HALF_BLEED, HALF_BLEED))
             if BLEED != 0:
                 maskimg_with_padding = maskimg_with_padding.convert("L")
-                maskimg_with_padding = maskimg_with_padding.filter(ImageFilter.BoxBlur(radius=int(HALF_BLEED)))
+                maskimg_with_padding = maskimg_with_padding.filter(ImageFilter.BoxBlur(radius=HALF_BLEED))
                 maskimg_with_padding = maskimg_with_padding.point(lambda x: 255 if x > 1 else 0)
             maskimg_with_padding = maskimg_with_padding.convert("1")
             maskimg_with_padding.save(os.path.join(self._mask_dir, f"{self.mask_prefix}{mask_id}-padding.bmp"))
