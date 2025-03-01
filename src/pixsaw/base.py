@@ -5,7 +5,7 @@ from os import makedirs, mkdir
 from glob import glob
 import json
 import logging
-from random import shuffle
+from random import shuffle, choice
 import base64
 from pathlib import Path
 # import time
@@ -35,10 +35,11 @@ class HandlerError(Exception):
 class Handler(object):
 
     mask_prefix = "m-"
+    mask_rotated_prefix = "r-"
     piece_prefix = "p-"
     no_mask_prefix = "n-"
 
-    def __init__(self, output_dir, lines_image, mask_dir="", raster_dir="", jpg_dir="", include_border_pixels=True, no_mask_raster_dir="", floodfill_min=400, floodfill_max=50_000_000):
+    def __init__(self, output_dir, lines_image, mask_dir="", mask_rotated_dir="", raster_dir="", jpg_dir="", include_border_pixels=True, no_mask_raster_dir="", floodfill_min=400, floodfill_max=50_000_000, rotate=()):
         """Handler constructor
         Fills an output directory with the generated masks based on
         lines drawn on an image.  Skips creating masks if output directory is
@@ -57,9 +58,12 @@ class Handler(object):
         self._floodfill_min = floodfill_min
         self._floodfill_max = floodfill_max
 
+        self._rotate=rotate
+
         self._lines_image = lines_image
         self._output_dir = output_dir
         self._mask_dir = os.path.join(output_dir, mask_dir)
+        self._mask_rotated_dir = os.path.join(output_dir, mask_rotated_dir)
         self._raster_dir = os.path.join(output_dir, raster_dir)
         self._no_mask_raster_dir = os.path.join(output_dir, no_mask_raster_dir)
         self._jpg_dir = os.path.join(output_dir, jpg_dir)
@@ -180,14 +184,47 @@ class Handler(object):
                                 self._mask_dir, f"{self.mask_prefix}{mask_id}.bmp"
                             )
                         )
+                        # Create rotated mask
+                        random_rotate = choice(self._rotate) if self._rotate else 0
+                        if random_rotate:
+                            # Only need to create rotated mask files if the mask is rotated.
+                            maskimg_rotate = floodmaskimg.rotate(random_rotate, expand=True)
+                            before_cropped_size = maskimg_rotate.size
+                            bbox_crop = maskimg_rotate.getbbox(alpha_only=False)
+                            maskimg_rotate = maskimg_rotate.crop(bbox_crop)
+                            after_cropped_size = maskimg_rotate.size
+                            center_x = round(((before_cropped_size[0] / 2) - bbox_crop[0]) / after_cropped_size[0], 5)
+                            center_y = round(((before_cropped_size[1] / 2) - bbox_crop[1]) / after_cropped_size[1], 5)
+                            center_x_offset = round(((after_cropped_size[0] * center_x) - (mask_pixels_width / 2)) * -1, 1)
+                            center_y_offset = round(((after_cropped_size[1] * center_y) - (mask_pixels_height / 2)) * -1, 1)
+                            maskimg_rotate.save(
+                                os.path.join(self._mask_rotated_dir, f"{self.mask_rotated_prefix}{mask_id}.bmp")
+                            )
+                            maskimg_rotate.close()
+                        else:
+                            center_x = 0.5
+                            center_y = 0.5
+                            center_x_offset = 0
+                            center_y_offset = 0
+                            bbox_crop = floodmaskimg.getbbox(alpha_only=False)
+
                         floodmaskimg.close()
 
+                        # Using a tuple here with this specific ordering for
+                        # optimal storage and backwards compatibility. Most
+                        # applications using pixsaw can expose these values in
+                        # a more user friendly way if necessary.
                         m_bbox = (
                             mask_pixels_left,
                             mask_pixels_top,
                             mask_pixels_right + 1,
                             mask_pixels_bottom + 1,
-                        )
+                            random_rotate,
+                            center_x,
+                            center_y,
+                            center_x_offset,
+                            center_y_offset,
+                        ) + bbox_crop
                         # Save the mask bbox
                         masks[mask_id] = m_bbox
 
@@ -228,6 +265,7 @@ class Handler(object):
 
             maskname = os.path.basename(mask_file)
             mask_id = os.path.splitext(maskname)[0][len(self.mask_prefix):]
+
             piece_id_to_mask[mask_count] = mask_id
             piecename = f"{self.mask_prefix}{mask_count}"
             bbox = tuple(masks.get(mask_id))
@@ -237,6 +275,9 @@ class Handler(object):
                 bbox[2] + HALF_BLEED,
                 bbox[3] + HALF_BLEED,
             )
+
+            random_rotate = bbox[4]
+            bbox_after_rotate = tuple(bbox[9:13])
 
             maskimg_with_padding = Image.new("RGB", (bbox_with_padding[2] - bbox_with_padding[0], bbox_with_padding[3] - bbox_with_padding[1]), (0, 0, 0))
             maskimg_with_padding.paste(maskimg, box=(HALF_BLEED, HALF_BLEED))
@@ -249,7 +290,7 @@ class Handler(object):
 
             for image_index, im in enumerate(im_sides):
                 piece_with_padding = im.crop(bbox_with_padding)
-                piece = im.crop(bbox)
+                piece = im.crop(bbox[:4])
 
                 black_blank_with_padding = Image.new("RGB", piece_with_padding.size, (0, 0, 0))
                 black_blank_with_padding.paste(piece_with_padding, box=(0, 0), mask=maskimg_with_padding)
@@ -261,6 +302,15 @@ class Handler(object):
 
                 piece.close()
                 piece_with_padding.close()
+
+                if random_rotate:
+                    transparent_blank = transparent_blank.rotate(random_rotate, expand=True)
+                    no_mask_blank = no_mask_blank.rotate(random_rotate, expand=True)
+                    black_blank_with_padding = black_blank_with_padding.rotate(random_rotate, expand=True)
+                    transparent_blank = transparent_blank.crop(bbox_after_rotate)
+                    no_mask_blank = no_mask_blank.crop(bbox_after_rotate)
+                    black_blank_with_padding = black_blank_with_padding.crop(bbox_after_rotate)
+
                 transparent_blank.save(
                     os.path.join(self._raster_dir, f"image-{image_index}", f"{self.piece_prefix}{piecename}.png")
                 )

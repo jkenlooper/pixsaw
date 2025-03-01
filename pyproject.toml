@@ -42,3 +42,8 @@ include = [
 packages = [
     "src/pixsaw",
 ]
+
+[tool.bandit]
+# Skipping B311; project commonly uses random generators and none of
+# them are for cryptographic purposes.
+skips = ["B311"]

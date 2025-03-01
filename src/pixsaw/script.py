@@ -47,6 +47,12 @@ def main():
         type=int,
         help="Max pixels to floodfill at a time",
     )
+    parser.add_argument(
+        "--rotate",
+        action="store",
+        default="0,0,1",
+        help="Random rotate pieces range for start, stop, step",
+    )
 
     parser.add_argument("image", nargs="+", help="JPG image")
 
@@ -56,7 +62,9 @@ def main():
     if not images and not (args.dir and args.lines):
         parser.error("Must set a directory and lines file with an image")
 
-    handler = Handler(args.dir, args.lines, include_border_pixels=args.gap, floodfill_min=args.floodfill_min, floodfill_max=args.floodfill_max)
+    rotate = tuple(range(*(int(x) for x in args.rotate.split(","))))
+
+    handler = Handler(args.dir, args.lines, include_border_pixels=args.gap, floodfill_min=args.floodfill_min, floodfill_max=args.floodfill_max, rotate=rotate)
     try:
         handler.process(images)
     except HandlerError as err:
