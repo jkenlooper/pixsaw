@@ -8,7 +8,7 @@ dynamic = ['version']
 description = "Cut a picture into pieces by cutting along pixel lines"
 readme = "README.md"
 license.text = "LGPLv3+"
-requires-python = ">=3.8, <4"
+requires-python = ">=3.9, <4"
 authors = [
     { name = "Jake Hickenlooper", email = "jake@weboftomorrow.com" },
 ]

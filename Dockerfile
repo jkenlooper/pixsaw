@@ -1,7 +1,7 @@
-# UPKEEP due: "2025-01-09" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull registry.hub.docker.com/library/alpine:3.20.3
+# UPKEEP due: "2025-08-11" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull registry.hub.docker.com/library/alpine:3.21.3
 # docker image ls --digests alpine
-FROM registry.hub.docker.com/library/alpine:3.20.3@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d AS build
+FROM registry.hub.docker.com/library/alpine:3.21.3@sha256:a8560b36e8b8210634f77d9f7f9efd7ffa463e380b75e2e74aff4511df3ef88c AS build
 
 RUN echo "Create dev user"; \
   addgroup -g 44444 dev && adduser -u 44444 -G dev -s /bin/sh -D dev
@@ -90,10 +90,10 @@ RUN echo "Audit packages for known vulnerabilities"; \
 CMD ["sh", "-c", "while true; do printf 'z'; sleep 60; done"]
 
 
-# UPKEEP due: "2025-01-09" label: "Alpine Linux base image" interval: "+3 months"
-# docker pull registry.hub.docker.com/library/alpine:3.20.3
+# UPKEEP due: "2025-08-11" label: "Alpine Linux base image" interval: "+3 months"
+# docker pull registry.hub.docker.com/library/alpine:3.21.3
 # docker image ls --digests alpine
-FROM registry.hub.docker.com/library/alpine:3.20.3@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d AS app
+FROM registry.hub.docker.com/library/alpine:3.21.3@sha256:a8560b36e8b8210634f77d9f7f9efd7ffa463e380b75e2e74aff4511df3ef88c AS app
 
 RUN echo "Create dev user"; \
   addgroup -g 44444 dev && adduser -u 44444 -G dev -s /bin/sh -D dev

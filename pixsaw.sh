@@ -85,7 +85,7 @@ docker run -i --tty \
     --mount "type=bind,src=$image_file,dst=/data/$bn_image_file,readonly=true" \
     --mount "type=volume,src=$container_name-output,dst=/data/output" \
     "$image_name" --dir="/data/output/$output_tmp" --lines="/data/$bn_lines_file" "/data/$bn_image_file"
-docker cp --quiet "$container_name:/data/output/$output_tmp/" "$output_dir/"
+docker cp "$container_name:/data/output/$output_tmp/" "$output_dir/"
 docker stop --time 1 "$container_name" > /dev/null 2>&1 || printf ''
 docker container rm "$container_name" > /dev/null 2>&1 || printf ''
 
