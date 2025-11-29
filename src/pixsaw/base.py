@@ -1,12 +1,11 @@
 from builtins import range
 from builtins import object
 import os.path
-from os import makedirs, mkdir
+from os import makedirs
 from glob import glob
 import json
 import logging
 from random import shuffle, choice
-import base64
 from pathlib import Path
 # import time
 

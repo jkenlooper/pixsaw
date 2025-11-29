@@ -4,8 +4,9 @@ set -o errexit
 
 script_name="$(basename "$0")"
 project_name="$(basename "$0" ".sh")"
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 echo "
-Try out '$project_name' by prompting for necessary options and isolating it to a docker container.
+Try out '$project_name' by prompting for necessary options and isolating it to a container.
 "
 
 # Use $PWD to avoid using 'realpath' since it isn't always available.
@@ -14,7 +15,7 @@ test -e "$project_dir/$script_name" || (echo "ERROR: Should run $script_name fro
 
 # Exit early if required commands are not available.
 for cmd in \
-  "docker" \
+  $CONTAINER_RUNTIME \
   ; do
   has_cmd="$(command -v "$cmd" || echo "no")"
   if [ "$has_cmd" = "no" ]; then
@@ -24,7 +25,7 @@ for cmd in \
 done
 
 # Make sure docker daemon is running first before prompting the user.
-is_docker_up="$(docker ps -q -l || echo "no")"
+is_docker_up="$($CONTAINER_RUNTIME ps -q -l || echo "no")"
 if [ "$is_docker_up" = "no" ]; then
   echo "ERROR: Failed check if docker daemon was ready. Start docker daemon first." 1>&2
   exit 1
@@ -32,12 +33,12 @@ fi
 
 image_name="$project_name"
 container_name="$project_name"
-docker stop --time 1 "$container_name" > /dev/null 2>&1 || printf ''
-docker container rm "$container_name" > /dev/null 2>&1 || printf ''
-docker image rm "$image_name" > /dev/null 2>&1 || printf ""
+"$CONTAINER_RUNTIME" stop --time 1 "$container_name" > /dev/null 2>&1 || printf ''
+"$CONTAINER_RUNTIME" container rm "$container_name" > /dev/null 2>&1 || printf ''
+"$CONTAINER_RUNTIME" image rm "$image_name" > /dev/null 2>&1 || printf ""
 
-echo "INFO $script_name: Building docker image: $image_name"
-DOCKER_BUILDKIT=1 docker build \
+echo "INFO $script_name: Building image: $image_name"
+"$CONTAINER_RUNTIME" build \
     -t "$image_name" \
     "$project_dir" > /dev/null
 
@@ -79,15 +80,15 @@ echo "INFO $script_name: Creating files in $output_dir directory."
 bn_lines_file="$(basename "$lines_file")"
 bn_image_file="$(basename "$image_file")"
 output_tmp="$(openssl rand -base64 12 | tr '+/=' '_')"
-docker run -i --tty \
+"$CONTAINER_RUNTIME" run -i --tty \
     --name "$container_name" \
     --mount "type=bind,src=$lines_file,dst=/data/$bn_lines_file,readonly=true" \
     --mount "type=bind,src=$image_file,dst=/data/$bn_image_file,readonly=true" \
     --mount "type=volume,src=$container_name-output,dst=/data/output" \
     "$image_name" --dir="/data/output/$output_tmp" --lines="/data/$bn_lines_file" "/data/$bn_image_file"
-docker cp "$container_name:/data/output/$output_tmp/" "$output_dir/"
-docker stop --time 1 "$container_name" > /dev/null 2>&1 || printf ''
-docker container rm "$container_name" > /dev/null 2>&1 || printf ''
+"$CONTAINER_RUNTIME" cp "$container_name:/data/output/$output_tmp/" "$output_dir/"
+"$CONTAINER_RUNTIME" stop --time 1 "$container_name" > /dev/null 2>&1 || printf ''
+"$CONTAINER_RUNTIME" container rm "$container_name" > /dev/null 2>&1 || printf ''
 
 echo "
 Created files in output directory: $output_dir/$output_tmp/
